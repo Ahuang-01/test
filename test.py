@@ -1808,17 +1808,28 @@ class NoteManager:
             print(f"{i}. {note[:-4]}")
     
     def read_note(self, title):
-        """读取并打印指定标题的笔记内容
-        title: 笔记标题（不带后缀）
-        """
-        filename = f"{self.notes_dir}/{title}.txt"
+        from pathlib import Path
+        notes_dir = Path(self.notes_dir)
+
+        # 简单校验，防止路径穿越
+        if any(sep in title for sep in ("/", "\\", "..")):
+            print("不合法的笔记标题")
+            return
+
+        path = notes_dir / f"{title}.txt"
         try:
-            # 以 UTF-8 编码读取文件内容
-            with open(filename, 'r', encoding='utf-8') as f:
+            with path.open("r", encoding="utf-8") as f:
                 content = f.read()
             print(f"\n{title}:\n{content}")
         except FileNotFoundError:
             print(f"笔记 '{title}' 不存在")
+        except PermissionError:
+            print(f"没有权限读取笔记 '{title}'")
+        except UnicodeDecodeError:
+            print(f"无法以 UTF-8 解码笔记 '{title}'，请检查文件编码")
+        except OSError as e:
+            print(f"读取笔记时发生 I/O 错误: {e}")
+
     
     def delete_note(self, title):
         """删除指定标题的笔记文件
